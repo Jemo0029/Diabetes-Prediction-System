@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Prediction System</title>
+    <style>
+        body {
+            font-family: 'Tahoma', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 18px;
+            display: none;
+        }
+        .diabetic {
+            background-color: #ffdddd;
+            color: #d63031;
+        }
+        .non-diabetic {
+            background-color: #ddffdd;
+            color: #27ae60;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Diabetes Prediction System</h1>
+        
+        <form id="diabetesForm">
+            <div class="form-group">
+                <label for="pregnancies">Number of pregnancies (for women only):</label>
+                <input type="number" id="pregnancies" min="0" max="20" required>
+                <span class="info-text">Enter 0 if you are male.</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="glucose">Blood glucose level (mg/dL):</label>
+                <input type="number" id="glucose" min="0" max="300" required>
+                <span class="info-text">The normal value is usually between 70–140 mg/dL.</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="bloodPressure">Blood pressure (mm Hg):</label>
+                <input type="number" id="bloodPressure" min="0" max="200" required>
+                <span class="info-text">Systolic blood pressure (the top number).</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="skinThickness">Skin thickness (mm):</label>
+                <input type="number" id="skinThickness" min="0" max="100" required>
+                <span class="info-text">Skin-fold thickness in the triceps area.</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="insulin">Insulin level (mu U/mL):</label>
+                <input type="number" id="insulin" min="0" max="1000" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="bmi">Body mass index (BMI):</label>
+                <input type="number" id="bmi" min="0" max="70" step="0.1" required>
+                <span class="info-text">Weight (kg) / (height (m))².</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="diabetesPedigree">Diabetes pedigree function:</label>
+                <input type="number" id="diabetesPedigree" min="0" max="3" step="0.001" required>
+                <span class="info-text">A value that indicates family history of diabetes.</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="age">Age (years):</label>
+                <input type="number" id="age" min="0" max="120" required>
+            </div>
+            
+            <button type="submit">Analyze Results</button>
+        </form>
+        
+        <div id="result" class="result"></div>
+        
+        <div class="footer">
+            <p>This system uses artificial intelligence to predict the likelihood of diabetes.</p>
+            <p>The results are not a medical diagnosis. Please consult a doctor for an accurate diagnosis.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('diabetesForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = {
+                Pregnancies: parseFloat(document.getElementById('pregnancies').value),
+                Glucose: parseFloat(document.getElementById('glucose').value),
+                BloodPressure: parseFloat(document.getElementById('bloodPressure').value),
+                SkinThickness: parseFloat(document.getElementById('skinThickness').value),
+                Insulin: parseFloat(document.getElementById('insulin').value),
+                BMI: parseFloat(document.getElementById('bmi').value),
+                DiabetesPedigreeFunction: parseFloat(document.getElementById('diabetesPedigree').value),
+                Age: parseFloat(document.getElementById('age').value)
+            };
+
+            const resultDiv = document.getElementById('result');
+            const submitButton = document.querySelector('#diabetesForm button');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Analyzing...';
+            resultDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'An error occurred while analyzing the data.');
+                }
+
+                const probability = (result.probability * 100).toFixed(1);
+                resultDiv.style.display = 'block';
+
+                if (result.isDiabetic) {
+                    resultDiv.className = 'result diabetic';
+                    resultDiv.innerHTML = '<strong>Result:</strong> The model indicates a higher predicted risk of diabetes.<br>Please consult a doctor for the necessary medical tests.<br><strong>Estimated probability:</strong> ' + probability + '%';
+                } else {
+                    resultDiv.className = 'result non-diabetic';
+                    resultDiv.innerHTML = '<strong>Result:</strong> The model indicates a lower predicted risk of diabetes.<br>Continue maintaining a healthy lifestyle and consult a doctor if you have concerns.<br><strong>Estimated probability:</strong> ' + probability + '%';
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result';
+                resultDiv.textContent = 'Error: ' + error.message;
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Analyze Results';
+                resultDiv.scrollIntoView({behavior: 'smooth'});
+            }
+        });
+    </script>
+</body>
+</html>
